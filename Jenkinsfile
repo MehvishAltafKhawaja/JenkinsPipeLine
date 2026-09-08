@@ -15,23 +15,30 @@ pipeline {
             }
         }
 
-        stage('Test Python Backend') {
-            agent {
-                label 'java-linux-01'
-            }
+       stage('Test Python Backend') {
+    agent {
+        label 'java-linux-01'
+    }
 
-            steps {
-                echo '===== TESTING PYTHON BACKEND ====='
+    steps {
+        echo '===== TESTING PYTHON BACKEND ====='
 
-                dir('backend') {
-                    sh '''
-                        python3 --version
-                        pip3 --version
-                        pip3 install -r requirements.txt
-                    '''
-                }
-            }
+        dir('backend') {
+            sh '''
+                python3 --version
+
+                echo "Creating Python virtual environment..."
+                python3 -m venv .venv
+
+                echo "Installing dependencies..."
+                .venv/bin/python -m pip install --upgrade pip
+                .venv/bin/python -m pip install -r requirements.txt
+
+                echo "Python backend dependencies installed successfully"
+            '''
         }
+    }
+}
 
         stage('Prepare Project for Docker Agent') {
             agent {
@@ -41,7 +48,9 @@ pipeline {
             steps {
                 echo '===== STASHING PROJECT FILES ====='
 
-                stash name: 'myproject-files', includes: '**/*'
+               stash name: 'myproject-files',
+                 includes: '**/*',
+                 excludes: 'backend/.venv/**'
             }
         }
 
