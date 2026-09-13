@@ -11,7 +11,7 @@ pipeline {
         FRONTEND_IMAGE = 'khawaja0011/app-frontend'
 
         EC2_USER = 'ubuntu'
-        EC2_HOST = '13.233.120.28'
+        EC2_HOST = '13.200.227.239'
     }
 
 
