@@ -1,0 +1,117 @@
+pipeline {
+
+    agent none
+
+    options {
+        skipDefaultCheckout(true)
+    }
+
+    stages {
+              stage("Linux-Worker")
+              {
+                 agent{
+                       label 'java-linux-01'
+                      }
+                       stages{
+                               stage('Checkout')
+                                  {
+                                     steps{
+                                            checkout scm
+                                          }
+                                   }
+                                stage("Test Python Backend")
+                                  {
+                                 steps{
+                                         dir('backend'){
+                                         sh "
+                                         python3 --version
+
+                                         python3 -m venv.venv
+
+                                         .venv/bin/python -m pip install --upgrade pip
+                                         .venv/bin/python -m pip install -r requirements.txt
+                                         "
+                                         }
+                                     }
+                                  }
+                stage('Prepare Project')
+                {
+                    steps{
+                        stash name 'myproject-file'
+                          includes: '**/*'
+                          excludes: 'backend/.venv  /**'
+                    }
+                }
+
+
+            }
+        }
+
+        stage('Docker-Agent'){
+            agent{
+                label 'docker-agent'
+            }
+
+            stages{
+                stage('Get-Project'){
+                    steps{
+                        deleteDir()
+                        unstash 'myproject-file'
+                    }
+                }
+
+                stage('Check-Docker'){
+                    steps{
+                        sh"
+                        docker --version
+                        docker compose version
+                        docker ps
+                        "
+                    }
+                }
+
+                stage('Build Backend'){
+                 
+                 steps{   sh "
+                    docker build \
+                    -t myproject-backend$(BUILD_NUMBER) \
+                    ./backend
+                    "
+                 }
+                }
+
+                stage('Build Frontend'){
+                    steps{
+                        sh"
+                        docker build \
+                        -t myproject-fronted$(BUILD_NUMBER) \
+                        ./frontend
+                        "
+                    }
+                }
+               stage('Deploy-Application'){
+                steps{
+                    sh"
+                    docker compose -p myproject down || true
+                    docker ps
+                    "   
+                    }
+               }
+               
+            }
+        }
+    }
+  post{
+    success{
+        echo "Pipeline Succefull"
+    }
+    failure{
+        echo "Pipeline Failed"
+    }
+
+    always{
+        echo "pipeline finished"
+    }
+  }
+
+}

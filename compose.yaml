@@ -1,16 +1,37 @@
 services:
+
   backend:
-    image: myproject-backend:${BUILD_NUMBER}
+    image: ${DOCKERHUB_USERNAME}/myproject-backend:${IMAGE_TAG}
     container_name: myproject-backend
+
     ports:
       - "8000:8000"
 
+    restart: unless-stopped
+
+    networks:
+      - app-network
+
+
   frontend:
-    image: myproject-frontend:${BUILD_NUMBER}
+    image: ${DOCKERHUB_USERNAME}/myproject-frontend:${IMAGE_TAG}
     container_name: myproject-frontend
+
     ports:
       - "3000:3000"
+
     environment:
-      BACKEND_URL: http://backend:8000
+      BACKEND_URL: http://backend:8000/api
+
     depends_on:
       - backend
+
+    restart: unless-stopped
+
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
